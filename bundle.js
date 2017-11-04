@@ -60,7 +60,7 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var graph = new _d3Graph2.default('#chart2', 200, 300);
+	var graph = new _d3Graph2.default('#chart2', 300, 500);
 
 /***/ }),
 /* 2 */
@@ -98,7 +98,9 @@
 	    this.windowWidth = //                          Minus wrapping padding / per sample
 	    document.getElementById('wrapper').offsetWidth - 20 - samples * 2;
 	
-	    var moves = _rxjs2.default.Observable.fromEvent(document, 'mousemove').map(function (x) {
+	    var moves = _rxjs2.default.Observable.fromEvent(document, 'mousemove').debounce(function () {
+	        return _rxjs2.default.Observable.timer(10);
+	    }).distinctUntilChanged().map(function (x) {
 	        return { x: x.clientX, y: x.clientY };
 	    }).take(this.samples).scan(function (acc, cur) {
 	        return [].concat(_toConsumableArray(acc), [cur]);
@@ -109,7 +111,7 @@
 	
 	        var _x = _d2.default.scale.linear().domain([0, document.getElementById('wrapper').offsetWidth]).range([0, _this.height]);
 	
-	        var chart = _d2.default.select(".chart").attr("height", _this.height).attr("width", barWidth * _this.data.length);
+	        var chart = _d2.default.select(".chart").attr("height", _this.height).attr("width", barWidth * _this.samples);
 	
 	        var bar = chart.selectAll("g").data(_this.data).enter().append("g").attr("transform", function (d, i) {
 	            var xTransform = i * barWidth;
@@ -121,7 +123,7 @@
 	            return _x(x.x);
 	        }).attr("width", barWidth - 1).attr("fill", function (d, i) {
 	            var diff = Math.abs(posData.length > 1 ? posData[i].x - posData[i - 1].x : 0);
-	            return 'rgb(' + Math.floor(diff * incScale) + ', 0, 0 )';
+	            return 'rgb(' + (Math.floor(diff * incScale) + 75) + ', 0, 0 )';
 	        });
 	    });
 	};
