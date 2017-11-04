@@ -60,7 +60,7 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var graph = new _d3Graph2.default('#chart2', 200);
+	var graph = new _d3Graph2.default('#chart2', 200, 300);
 
 /***/ }),
 /* 2 */
@@ -86,35 +86,42 @@
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 	
-	var d3Graph = function d3Graph(id, samples) {
+	var d3Graph = function d3Graph(id, samples, height) {
 	    var _this = this;
 	
 	    _classCallCheck(this, d3Graph);
 	
 	    this.container = _d2.default.select(id).append('svg').append('g');
+	    this.height = height;
 	    this.samples = samples;
 	    this.data = [];
-	    this.windowWidth = //                          Minus Padding
+	    this.windowWidth = //                          Minus wrapping padding / per sample
 	    document.getElementById('wrapper').offsetWidth - 20 - samples * 2;
 	
-	    var keyups = _rxjs2.default.Observable.fromEvent(document, 'mousemove').map(function (x) {
+	    var moves = _rxjs2.default.Observable.fromEvent(document, 'mousemove').map(function (x) {
 	        return { x: x.clientX, y: x.clientY };
 	    }).take(this.samples).scan(function (acc, cur) {
 	        return [].concat(_toConsumableArray(acc), [cur]);
-	    }, []).subscribe(function (x) {
-	        _this.data = x;
-	        console.log("X", x);
-	        var inc = 255 / _this.data.length;
-	        _d2.default.select(".chart2").selectAll("div").data(_this.data).enter().append("div").style("height", function (d, i) {
-	            return d.y + "px";
-	        }).style('background-color', function (d, i) {
-	            var indexInc = Math.floor(i * inc);
-	            return 'rgb(0, 0, ' + indexInc + ')';
-	        }).style('width', function (d, i) {
-	            console.log(_this.windowWidth / _this.data.length);
-	            return _this.windowWidth / _this.samples + 'px';
-	        }).text(function (d) {
-	            return d.y;
+	    }, []).subscribe(function (posData) {
+	        _this.data = posData;
+	        var barWidth = document.getElementById('wrapper').offsetWidth / _this.samples,
+	            incScale = 255 / _this.height;
+	
+	        var _x = _d2.default.scale.linear().domain([0, document.getElementById('wrapper').offsetWidth]).range([0, _this.height]);
+	
+	        var chart = _d2.default.select(".chart").attr("height", _this.height).attr("width", barWidth * _this.data.length);
+	
+	        var bar = chart.selectAll("g").data(_this.data).enter().append("g").attr("transform", function (d, i) {
+	            var xTransform = i * barWidth;
+	            var yTransform = _this.height - _x(d.x);
+	            return 'translate(' + xTransform + ',' + yTransform + ')';
+	        });
+	
+	        bar.append("rect").attr("height", function (x) {
+	            return _x(x.x);
+	        }).attr("width", barWidth - 1).attr("fill", function (d, i) {
+	            var diff = Math.abs(posData.length > 1 ? posData[i].x - posData[i - 1].x : 0);
+	            return 'rgb(' + Math.floor(diff * incScale) + ', 0, 0 )';
 	        });
 	    });
 	};
