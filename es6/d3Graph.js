@@ -2,39 +2,47 @@ import d3 from 'd3';
 import Rx from 'rxjs';
 
 export default class d3Graph {
-    constructor(id, samples) {
+    constructor(id, samples, height) {
         this.container = d3.select(id).append('svg').append('g');
+        this.height = height
         this.samples = samples;
         this.data = [];
-        this.windowWidth = //                          Minus Padding
+        this.windowWidth = //                          Minus wrapping padding / per sample
             document.getElementById('wrapper').offsetWidth - 20 - samples * 2;
 
-        var keyups = Rx.Observable.fromEvent(document, 'mousemove')
+        var moves = Rx.Observable.fromEvent(document, 'mousemove')
             .map(x => ({x: x.clientX , y : x.clientY}))
             .take(this.samples)
             .scan((acc, cur) => [...acc ,cur],[])
-            .subscribe(x => {
-                this.data = x;
-                console.log("X", x);
-                let inc  = (255/this.data.length);
-                d3.select(".chart2")
-                    .selectAll("div")
+            .subscribe( posData => {
+                this.data = posData;
+                let barWidth = document.getElementById('wrapper').offsetWidth / this.samples,
+                    incScale = 255/this.height ;
+
+                let _x = d3.scale.linear()
+                    .domain([0, document.getElementById('wrapper').offsetWidth])
+                    .range([0, this.height ]);
+
+                let chart = d3.select(".chart")
+                    .attr("height", this.height)
+                    .attr("width", barWidth * this.data.length);
+
+                var bar = chart.selectAll("g")
                     .data(this.data)
-                    .enter()
-                    .append("div")
-                    .style("height", function(d,i) { return d.y + "px"; })
-                    .style('background-color' , function(d,i){
-                        let indexInc = Math.floor(i * inc);
-                        return `rgb(0, 0, ${indexInc})`;
-                    })
-                    .style('width', (d,i) => {
-                        console.log(this.windowWidth / this.data.length);
-                        return this.windowWidth / this.samples + 'px';
-                    })
+                    .enter().append("g")
+                    .attr("transform", (d, i) => {
+                        let xTransform = i * barWidth;
+                        let yTransform = this.height - _x(d.x);
+                        return `translate(${xTransform},${yTransform})`; });
 
-                    .text(function(d) { return d.y; });
+                bar.append("rect")
+                    .attr("height", x => _x(x.x) )
+                    .attr("width", barWidth - 1)
+                    .attr("fill", (d,i) => {
+                        let diff
+                            = Math.abs(( posData.length > 1) ? posData[i].x - posData[i-1].x : 0);
+                        return `rgb(${ (Math.floor(diff * incScale) ) }, 0, 0 )`;
+                    });
             });
-
     }
-
 }
