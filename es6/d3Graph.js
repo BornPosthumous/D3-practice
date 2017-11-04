@@ -4,13 +4,15 @@ import Rx from 'rxjs';
 export default class d3Graph {
     constructor(id, samples, height) {
         this.container = d3.select(id).append('svg').append('g');
-        this.height = height
+        this.height = height;
         this.samples = samples;
         this.data = [];
         this.windowWidth = //                          Minus wrapping padding / per sample
             document.getElementById('wrapper').offsetWidth - 20 - samples * 2;
 
         var moves = Rx.Observable.fromEvent(document, 'mousemove')
+            .debounce(() => Rx.Observable.timer(10))
+            .distinctUntilChanged()
             .map(x => ({x: x.clientX , y : x.clientY}))
             .take(this.samples)
             .scan((acc, cur) => [...acc ,cur],[])
@@ -25,7 +27,7 @@ export default class d3Graph {
 
                 let chart = d3.select(".chart")
                     .attr("height", this.height)
-                    .attr("width", barWidth * this.data.length);
+                    .attr("width", barWidth * this.samples);
 
                 var bar = chart.selectAll("g")
                     .data(this.data)
@@ -41,7 +43,7 @@ export default class d3Graph {
                     .attr("fill", (d,i) => {
                         let diff
                             = Math.abs(( posData.length > 1) ? posData[i].x - posData[i-1].x : 0);
-                        return `rgb(${ (Math.floor(diff * incScale) ) }, 0, 0 )`;
+                        return `rgb(${ (Math.floor(diff * incScale) + 75 ) }, 0, 0 )`;
                     });
             });
     }
