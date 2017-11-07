@@ -60,7 +60,7 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var graph = new _d3Graph2.default('#chart2', 300, 500);
+	var graph = new _d3Graph2.default('.chart', 300, 500, 10);
 
 /***/ }),
 /* 2 */
@@ -86,45 +86,87 @@
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 	
-	var d3Graph = function d3Graph(id, samples, height) {
+	var d3Graph = function d3Graph(id, samples, height, tInterval) {
 	    var _this = this;
 	
 	    _classCallCheck(this, d3Graph);
 	
-	    this.container = _d2.default.select(id).append('svg').append('g');
 	    this.height = height;
 	    this.samples = samples;
-	    this.data = [];
-	    this.windowWidth = //                          Minus wrapping padding / per sample
-	    document.getElementById('wrapper').offsetWidth - 20 - samples * 2;
+	    this.tInterval = tInterval;
+	    this.colorIntensity = 75;
+	    this.incScale = 255 / this.height;
+	    this.container = _d2.default.select(id).append('svg').append('g');
+	    this.offsetWidth = document.getElementById('wrapper').offsetWidth - 75;
+	    this.barWidth = this.offsetWidth / this.samples;
+	
+	    this._y = _d2.default.scale.linear().domain([0, this.offsetWidth]).range([this.height, 0]);
+	
+	    this._x = _d2.default.scale.linear().domain([this.samples, 0]).range([this.offsetWidth, 0]);
+	
+	    this.yAxis = _d2.default.svg.axis().scale(this._y).orient("left").ticks(20);
+	
+	    this.xAxis = _d2.default.svg.axis().scale(this._x).orient("bottom").ticks(20);
+	
+	    this.chart = _d2.default.select(".chart");
+	
+	    this.chart.append("g").attr("class", "y axis").call(this.yAxis);
+	
+	    this.chart.append("g").attr("class", "x axis").attr("transform", 'translate(0, ' + this.height + ')').call(this.xAxis);
 	
 	    var moves = _rxjs2.default.Observable.fromEvent(document, 'mousemove').debounce(function () {
-	        return _rxjs2.default.Observable.timer(10);
+	        return _rxjs2.default.Observable.timer(_this.timerInterval);
 	    }).distinctUntilChanged().map(function (x) {
 	        return { x: x.clientX, y: x.clientY };
 	    }).take(this.samples).scan(function (acc, cur) {
 	        return [].concat(_toConsumableArray(acc), [cur]);
 	    }, []).subscribe(function (posData) {
-	        _this.data = posData;
-	        var barWidth = document.getElementById('wrapper').offsetWidth / _this.samples,
-	            incScale = 255 / _this.height;
 	
-	        var _x = _d2.default.scale.linear().domain([0, document.getElementById('wrapper').offsetWidth]).range([0, _this.height]);
-	
-	        var chart = _d2.default.select(".chart").attr("height", _this.height).attr("width", barWidth * _this.samples);
-	
-	        var bar = chart.selectAll("g").data(_this.data).enter().append("g").attr("transform", function (d, i) {
-	            var xTransform = i * barWidth;
-	            var yTransform = _this.height - _x(d.x);
-	            return 'translate(' + xTransform + ',' + yTransform + ')';
+	        var bar = _this.chart.selectAll("rect.x").data(posData).enter().append("g").attr("transform", function (d, i) {
+	            return 'translate(' + i * _this.barWidth + ',0)';
 	        });
 	
-	        bar.append("rect").attr("height", function (x) {
-	            return _x(x.x);
-	        }).attr("width", barWidth - 1).attr("fill", function (d, i) {
+	        bar.append("rect").attr('class', 'x').attr("height", function (x) {
+	            return _this.height - _this._y(x.x);
+	        }).attr("y", function (d) {
+	            return _this._y(d.x);
+	        }).attr("width", _this.barWidth).attr("fill", function (d, i) {
 	            var diff = Math.abs(posData.length > 1 ? posData[i].x - posData[i - 1].x : 0);
-	            return 'rgb(' + (Math.floor(diff * incScale) + 75) + ', 0, 0 )';
+	            return 'rgb(' + (Math.floor(diff * _this.incScale) + _this.colorIntensity) + ', 0, 0 )';
+	        }).attr('opacity', 0.5);
+	        ;
+	        var ybar = _this.chart.selectAll("rect.y").data(posData).enter().append("g").attr("transform", function (d, i) {
+	            return 'translate(' + i * _this.barWidth + ',0)';
 	        });
+	
+	        ybar.append("rect").attr('class', 'y').attr("height", function (x) {
+	            return _this.height - _this._y(x.y);
+	        }).attr("y", function (d) {
+	            return _this._y(d.y);
+	        }).attr("width", _this.barWidth).attr("fill", function (d, i) {
+	            var diff = Math.abs(posData.length > 1 ? posData[i].y - posData[i - 1].y : 0);
+	            return 'rgb(' + (0, Math.floor(diff * _this.incScale) + _this.colorIntensity) + ', 0 )';
+	        }).attr('opacity', 0.5);
+	
+	        _this.chart.selectAll('line.x').data(posData).enter().append("g").append('line').attr('class', 'x').attr('x1', function (d, i) {
+	            return posData.length > 1 ? (i - 1) * _this.barWidth : 0;
+	        }).attr('y1', function (d, i) {
+	            return posData.length > 1 ? _this._y(posData[i - 1].x) : 0;
+	        }).attr('x2', function (d, i) {
+	            return posData.length > 1 ? i * _this.barWidth : 0;
+	        }).attr('y2', function (d, i) {
+	            return posData.length > 1 ? _this._y(posData[i].x) : 0;
+	        }).attr('stroke', "black").attr('stroke-width', "2");
+	
+	        _this.chart.selectAll('line.y').data(posData).enter().append("g").append('line').attr('class', 'y').attr('x1', function (d, i) {
+	            return posData.length > 1 ? (i - 1) * _this.barWidth : 0;
+	        }).attr('y1', function (d, i) {
+	            return posData.length > 1 ? _this._y(posData[i - 1].y) : 0;
+	        }).attr('x2', function (d, i) {
+	            return posData.length > 1 ? i * _this.barWidth : 0;
+	        }).attr('y2', function (d, i) {
+	            return posData.length > 1 ? _this._y(posData[i].y) : 0;
+	        }).attr('stroke', "white").attr('stroke-width', "2");
 	    });
 	};
 	
