@@ -17,38 +17,58 @@
         margin-right: 2px;
         } */
      html, body { height: 100%; padding: 0px; margin:0px; }
-     .chart{
-         border: 1px solid grey;
-         padding: 40px;
-         box-sizing: border-box;
+     .chart, .chart2{
+       border: 1px solid grey;
+       padding: 40px;
+       box-sizing: border-box;
      }
      svg {
-         background-color: rgba(97,139,137, 0.5);;
-         width: 100%;
-         height: 1000px;
+       background-color: rgba(97,139,137, 0.5);;
+       width: 100%;
+       height: 800px;
+     }
+     svg.chart2 {
+       background-color: slategrey;
      }
      #wrapper {
-         width: 100%;
-         height: 100%;
+       width: 100%;
      }
      .axis text {
-         font: 12px sans-serif;
-         stroke: none;
-         fill: black;
+       font: 12px sans-serif;
+       stroke: none;
+       fill: black;
      }
 
      .axis path,
      .axis line{
-         fill: darkGrey;
-         stroke: darkGrey;
-         shape-rendering: crispEdges;
+       fill: darkGrey;
+       stroke: darkGrey;
+       shape-rendering: crispEdges;
+     }
+     h3,h4{
+       margin:0px;
+       }
+     div.tooltip {
+       position: absolute;
+       text-align: center;
+       width: 300px;
+       height: 100px;
+       padding: 2px;
+       font: 18px sans-serif;
+       background: transparent;
+       color: white;
+       border: 0px;
+       border-radius: 8px;
+       pointer-events: none;
      }
     </style>
     <body>
-        <div id="wrapper">
-            <svg class="chart" ></svg>
-        </div>
-        <script src="bundle.js"/></script>
-        
+      <div id="wrapper">
+        <svg class="chart3" ></svg>
+        <svg class="chart" ></svg>
+        <h1> Chart 2 </h1>
+        <svg id="chart2" class="chart2" ></svg>
+      </div>
+      <script src="bundle.js"/></script>
     </body>
 </html>
