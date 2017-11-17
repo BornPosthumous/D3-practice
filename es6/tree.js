@@ -1,149 +1,119 @@
-import d3 from 'd3';
+import * as d3 from 'd3';
 import Rx from 'rxjs';
-import _ from 'lodash';
+import * as _ from 'lodash';
 
-
-function getOffset( el ) {
-  el = el.getBoundingClientRect();
-  return {
-    left: el.left + window.scrollX,
-    top: el.top + window.scrollY
+export class d3BST {
+  constructor(id, bst, height, tInterval) {
+    this.bst = bst;
+    this._logScale = this.getLogScale;
+    this.chart = this.setupChart();
+    this.displayNodes();
+    this.displayLinks();
   }
-}
-// Generate a list of random integers;
-const getRandomInt = ( min, max ) => {
-  min = Math.ceil( min );
-  max = Math.floor( max );
-  return Math.floor( Math.random() * ( max - min ) ) + min;
-};
+  displayLinks() {
+    var link = this.chart.selectAll('path.link')
+      .data(this.links)
+      .enter()
+      .insert('path', "g")
+      .attr('class', 'link')
+      .attr('d', d => (d.parent !== null)
+        ? this.diagonal(d, {
+          x: d.parent.x,
+          y: d.parent.y
+        }) :
+        null
+      );
 
-export default class d3BST {
-  constructor( id, samples, height, tInterval ) {
-    this.height = height;
-    let index = -1;
-    this.offsetWidth = document.getElementById( 'wrapper' )
+  }
+  diagonal(s, d) {
+    let path = `M ${s.x} ${s.y}
+            C ${(s.x + d.x) / 2} ${s.y},
+              ${(s.x + d.x) / 2} ${d.y},
+              ${d.x} ${d.y}`
+
+    return path;
+  }
+  displayNodes() {
+    var nodeEnter =
+      this.chart.selectAll('g.node')
+        .data(this.nodes)
+        .enter()
+        .append('g')
+        .attr('class', 'node')
+        .attr("transform", d => "translate(" + this.root.x0 + "," + this.root.y0 + ")")
+        .attr("transform", d => "translate(" + d.x + "," + d.y + ")")
+
+    nodeEnter.append('circle')
+      .attr('r', d => Math.sqrt(d.data.value))
+      .style("fill", d => d._children ? "lightsteelblue" : "#fff")
+
+    nodeEnter.append('text')
+      .attr("dy", ".35em")
+      .attr("x", d => d.children || d._children ? -Math.sqrt(d.data.value) - 3 : Math.sqrt(d.data.value) + 3)
+      .attr("text-anchor", d => d.children || d._children ? "end" : "start")
+      .text(d => d.data.value);
+
+  }
+  getLogScale() {
+    return d3.scaleLog()
+      .domain([1, 100])
+      .range([10, 100])
+  }
+  setupChart() {
+    this.offsetWidth = document.getElementById('wrapper')
       .offsetWidth;
-
-    this.chart = d3.select( ".chart3" );
-    const num_items = 12;
-    const unsorted_list = _.range( num_items )
-      .map( n => getRandomInt( 0, num_items ) );
-
-    let bst = new BST( new Node( 13 ) );
-    const setBst = bst => v => bst.insert( bst.root, new Node( v ) );
-    unsorted_list.forEach( setBst( bst ) );
-    console.log( bst.getHeight( bst.root ) );
-    console.log(
-      `The resulting tree had a height of : ${bst.getHeight(bst.root)}
-     ${JSON.stringify(bst.root, null, 2)}` );
-    console.log( "Keke", d3.keys( bst.root ) );
-    console.log( "D3 h", d3 )
-    let d = d3.hierarchy( bst.root, c => {
-      let children = [ ...c.left, ...c.right ];
-      console.log( "C", children )
-      return c.children;
-    } )
-    console.log( "Done" );
-  }
-}
-class Node {
-  constructor( val, left, right ) {
-    this.value = val;
-    this.left = left || null;
-    this.right = right || null;
-  }
-  get value() {
-    return this._value;
-  }
-  set value( newValue ) {
-    this._value = newValue;
-  }
-
-  set left( leaf ) {
-    this._left = leaf;
-  }
-  set right( leaf ) {
-    this._right = leaf;
-  }
-
-  get left() {
-    return this._left;
-  }
-  get right() {
-    return this._right;
-  }
-}
-class BST {
-  constructor( root ) {
-    this.root = root;
-  }
-  setOrInsertLeaf( root, node, direction ) {
-    ( root[ direction ] == null ) ?
-    root[ direction ] = node: this.insert( root[ direction ], node );
-  }
-  insert( root, node ) {
-    // If the root value is less than
-    this.setOrInsertLeaf( root, node, ( root.value < node.value ) ? 'right' : 'left' );
-  }
-  minValueNode( node ) {
-    let current = node;
-    while ( current.left !== null ) {
-      current = current.left;
+    this.margin = {
+      top: 40,
+      bottom: 80
     }
-    return current;
-  }
-  deleteNode( root, key ) {
-    // If there root doesn't exist, then just return null bc thats the tree
-    if ( root === null ) return root;
+    this.width = 400;
+    this.height = 400 - this.margin.top - this.margin.bottom;
 
-    // If the value is not equal (i.e. > || < ) then we need to move to a lower level
-    // This will determine whether we should go left or right, i.e. root will become that node
-    // The left/right will also become the result of the deletion
-    if ( key < root.value ) {
-      root.left = this.deleteNode( root.left, key );
-    } else if ( key > root.value ) {
-      root.right = this.deleteNode( root.right, key );
-    }
+    this.root = this.getRoot(this.bst);
+    this.treemap = d3.tree()
+      .size([this.width, this.height]);
 
-    // If the value is equal then we stop traversing
-    else {
-      // If Node has only one or no child,
-      // Then we just move that one up to the position of the node we are deleting
-      // Recall that earlier we set root.left/root.right to be the result of this function
-      // So, if we return the temp (i.e. the nodes (with leaves)), then those will be rejoined
-      // To the table via that function call
-      if ( root.left === null ) {
-        let temp = root.right;
-        root = null;
-        return temp;
-      } else if ( root.right === null ) {
-        let temp = root.left;
-        root = null;
-        return temp;
-      }
-      // This next block code fires when there are two children
-      // Essentially we want to find the node with the minimum value
-      // and replace the delete node with that node
+    this.root.x0 = this.width / 2;
+    this.root.y0 = 0;
+    this.getNodesAndLinks()
+    // Normalize for fixed-depth
+    this.setNodeDepth(this.nodes, 35)
 
-      // Find the minimum value (it should exist in the right subtree)
-      let local_minimum = this.minValueNode( root.right );
-      // Replace the root with that value
-      root.value = local_minimum.value;
-      // Set the right value to be the resulting subtree after deleting the minimum value
-      root.right = this.deleteNode( root.right, local_minimum.value );
-    }
-    return root;
+    return d3.select(".chart3")
+      .attr("height", this.height + this.margin.top + this.margin.bottom)
+      .attr("viewBox", "0 0 400 400")
+      .append("g")
+      .attr("transform", "translate(0," + this.margin.top + ")");;
+
   }
-  search( root, key ) {
-    if ( root.value == null || root.value == key ) return root;
-    if ( root.value < key ) return this.search( root.right, key );
-    return this.search( root.left, key );
+  getRoot(bst) {
+    return d3.hierarchy(bst.root, c => {
+      let children = [];
+      if (c.left !== null) children.push(c.left)
+      if (c.right !== null) children.push(c.right);
+      return children;
+    })
   }
-  getHeight( root ) {
-    return ( root == null || root.value == null ) ?
-      0 :
-      ( this.getHeight( root.left ) > this.getHeight( root.right ) ) ?
-      ( this.getHeight( root.left ) + 1 ) :
-      ( this.getHeight( root.right ) + 1 );
+  setNodeDepth(nodes, depth) {
+    nodes.forEach(function (d) {
+      d.y = d.depth * depth
+    });
+  }
+  getNodesAndLinks() {
+    var treeData = this.treemap(this.root);
+    this.nodes = treeData.descendants();
+    this.links = treeData.descendants();
+  }
+  setupRootAndTree() {
+    this.root = this.getRoot(bst);
+    this.treemap = d3.tree()
+      .size([this.width, this.height]);
+
+    this.root.x0 = this.width / 2;
+    this.root.y0 = 0;
+    this.getNodesAndLinks()
+    // Normalize for fixed-depth
+    this.setNodeDepth(this.nodes, 35)
+
   }
 }
