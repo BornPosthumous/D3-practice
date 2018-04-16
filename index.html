@@ -22,63 +22,67 @@
        padding: 40px;
        box-sizing: border-box;
      }
+     #wrapper h1 {
+       background-color: rgba(97,139,137, 0.5);
+       margin: 0px;
+     }
      svg {
-       background-color: rgba(97,139,137, 0.5);;
-       width: 100%;
-       height: 800px;
+         background-color: rgba(97,139,137, 0.5);
+         width: 100%;
+         height: 800px;
      }
      svg.chart2 {
-       background-color: slategrey;
-     }
-     #wrapper {
-       width: 100%;
-     }
-     .axis text {
-       font: 12px sans-serif;
-       stroke: none;
-       fill: black;
-     }
+         background-color: slategrey;
+       }
+       #wrapper {
+         width: 100%;
+       }
+       .axis text {
+         font: 12px sans-serif;
+         stroke: none;
+         fill: black;
+       }
 
-     .axis path,
-     .axis line{
-       fill: darkGrey;
-       stroke: darkGrey;
-       shape-rendering: crispEdges;
-     }
-     h3,h4{
-       margin:0px;
-     }
-     .node circle{
-       fill: #fff;
-       stroke: steelblue;
-       stroke-width: 3px;
-     }
-     .link{
-       fill: none;
-       stroke: #ccc;
-       stroke-width: 5px;
-     }
+       .axis path,
+       .axis line{
+         fill: darkGrey;
+         stroke: darkGrey;
+         shape-rendering: crispEdges;
+       }
+       h3,h4{
+         margin:0px;
+       }
+       .node circle{
+         fill: #fff;
+         stroke: steelblue;
+         stroke-width: 3px;
+       }
+       .link{
+         fill: none;
+         stroke: #ccc;
+         stroke-width: 5px;
+       }
 
-     .node text{ font: 8px sans-serif; }
-     div.tooltip {
-       position: absolute;
-       text-align: center;
-       width: 300px;
-       height: 100px;
-       padding: 2px;
-       font: 18px sans-serif;
-       background: transparent;
-       color: white;
-       border: 0px;
-       border-radius: 8px;
-       pointer-events: none;
-     }
+       .node text{ font: 8px sans-serif; }
+       div.tooltip {
+         position: absolute;
+         text-align: center;
+         width: 300px;
+         height: 100px;
+         padding: 2px;
+         font: 18px sans-serif;
+         background: transparent;
+         color: white;
+         border: 0px;
+         border-radius: 8px;
+         pointer-events: none;
+       }
     </style>
     <body>
       <div id="wrapper">
+        <h1> Unbalanced BST (refresh for a new one!) </h1>
         <svg class="chart3" ></svg>
         <svg class="chart" ></svg>
-        <h1> Chart 2 </h1>
         <svg id="chart2" class="chart2" ></svg>
       </div>
       <script src="bundle.js"/></script>

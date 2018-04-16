@@ -25,7 +25,7 @@ const random_list = num_items => new Set( range( num_items )
 const setBst = bst => v => bst.insert( bst.root, new Node( v ) );
 
 export const getBST = num_items => {
-  let unsorted_list = random_list( 30 );
+  let unsorted_list = random_list( num_items );
   let rootValue = unsorted_list.values()
     .next()
     .value;

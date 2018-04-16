@@ -9,4 +9,4 @@ import {
 
 let graph = new d3Graph( '.chart', 300, 500, 10 );
 let barGraph = new d3BarGraph( '.chart2', 300, 500, 10 );
-let treeGraph = new d3BST( '.chart3', getBST( 30 ), 500, 10 );
+let treeGraph = new d3BST( '.chart3', getBST( 50 ), 500, 10 );
